@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Responsive Face Attendance</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script defer src="js/face-api.min.js"></script>
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <div class="app-wrapper">
+        <header>
+            <h1>Attendance System</h1>
+            <p id="status">Initializing AI...</p>
+        </header>
+
+        <div class="video-container" id="video-container">
+            <video id="video" width="720" height="560" autoplay muted playsinline></video>
+        </div>
+        
+        <div class="ui-panel">
+            <input type="text" id="userName" placeholder="Enter Name">
+            <div class="button-group">
+                <button id="registerBtn" class="btn-primary">Register</button>
+                <button id="scanBtn" class="btn-success">Time In / Out</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
