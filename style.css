@@ -53,4 +53,18 @@ button {
 @media (min-width: 768px) {
     .video-container { width: 80%; }
     .ui-panel { width: 80%; }
+
 }
+
+.separator { margin: 25px 0; border: 0; border-top: 1px solid #444; }
+.btn-info { background: #17a2b8; color: white; padding: 12px; border-radius: 5px; cursor: pointer; border: none; width: 100%; margin-top: 10px; }
+
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #16213e;
+    color: white;
+}
+.styled-table th, .styled-table td { padding: 12px; border: 1px solid #444; text-align: center; }
+.styled-table thead { background-color: #0f3460; }
