@@ -21,11 +21,33 @@
         </div>
         
         <div class="ui-panel">
-            <input type="text" id="userName" placeholder="Enter Name">
+            <input type="text" id="userName" placeholder="Enter Name to Register">
             <div class="button-group">
-                <button id="registerBtn" class="btn-primary">Register</button>
+                <button id="registerBtn" class="btn-primary">Register Face</button>
                 <button id="scanBtn" class="btn-success">Time In / Out</button>
             </div>
+        </div>
+
+        <hr class="separator">
+
+        <div class="search-panel">
+            <h3>Attendance Records</h3>
+            <input type="text" id="searchId" placeholder="Enter User ID or Name">
+            <button id="viewLogsBtn" class="btn-info">View Records</button>
+        </div>
+
+        <div id="logsDisplay" class="logs-container">
+            <table id="logsTable" class="styled-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="logsBody">
+                    </tbody>
+            </table>
         </div>
     </div>
 </body>
