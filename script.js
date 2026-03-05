@@ -1,8 +1,8 @@
 const video = document.getElementById('video');
 const status = document.getElementById('status');
 
-// 1. I-load ang mga AI Models (Siguraduhin na may 'models' folder ka)
-// Palitan ang '/models' ng 'models/' o './models/'
+// 1. I-load ang mga AI Models
+// Gumagamit tayo ng relative path para hindi mag-CORS error sa Live Server
 Promise.all([
     faceapi.nets.ssdMobilenetv1.loadFromUri('models/'),
     faceapi.nets.faceLandmark68Net.loadFromUri('models/'),
@@ -87,5 +87,47 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
         }
     } else {
         alert("No face detected during scan.");
+    }
+});
+
+// 5. VIEW RECORDS: Search by ID or Name
+document.getElementById('viewLogsBtn').addEventListener('click', async () => {
+    const identifier = document.getElementById('searchId').value;
+    if (!identifier) return alert("Please enter User ID or Name!");
+
+    status.innerText = "Searching records...";
+
+    try {
+        // Tatawagin natin ang API sa Node.js server mo
+        const response = await fetch(`http://localhost:3000/logs/${identifier}`);
+        const data = await response.json();
+
+        if (response.ok) {
+            const table = document.getElementById('logsTable');
+            const tbody = document.getElementById('logsBody');
+            
+            // Linisin ang table bago lagyan ng bago
+            tbody.innerHTML = "";
+            table.style.display = "table";
+
+            // I-populate ang table gamit ang logs galing sa database
+            data.logs.forEach(log => {
+                const dateObj = new Date(log.time);
+                const row = `<tr>
+                    <td>${dateObj.toLocaleDateString()}</td>
+                    <td>${dateObj.toLocaleTimeString()}</td>
+                    <td>${log.type}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+            
+            status.innerText = `Logs loaded for ${data.name}`;
+        } else {
+            alert(data.message || "User not found.");
+            status.innerText = "User not found.";
+        }
+    } catch (err) {
+        console.error("Search Error:", err);
+        alert("Could not connect to the backend server.");
     }
 });
