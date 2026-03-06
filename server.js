@@ -7,15 +7,19 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 
-// 1. DYNAMIC CONFIGURATION (Railway & Local)
-// Ginagamit ang MONGO_URL mula sa Railway Variables mo
-const MONGO_URI = process.env.MONGO_URL || 'mongodb://localhost:27017/attendanceDB';
-const PORT = process.env.PORT || 3000;
+// Siguraduhin na MONGO_URL ang gamit mo rito
+const MONGO_URI = process.env.MONGO_URL;
 
-// 2. CONNECT TO DATABASE
+if (!MONGO_URI) {
+    console.error("ERROR: MONGO_URL is not defined in environment variables!");
+}
+
 mongoose.connect(MONGO_URI)
-    .then(() => console.log("Connected to Cloud MongoDB Successfully!"))
-    .catch(err => console.error("Database Connection Error:", err));
+    .then(() => console.log("SUCCESS: Connected to Cloud MongoDB!"))
+    .catch(err => {
+        console.error("DATABASE CONNECTION ERROR DETAILS:");
+        console.error(err.message);
+    });
 
 // 3. DEFINE USER SCHEMA
 const userSchema = new mongoose.Schema({
@@ -97,3 +101,4 @@ app.get('/logs/:identifier', async (req, res) => {
 
 // 7. START SERVER
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
