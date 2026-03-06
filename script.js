@@ -50,18 +50,19 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
 
             const result = await response.json();
             
+            // DITO ANG FIX: I-check kung success ang status code (200-299)
             if (response.ok) {
                 alert(result.message);
                 status.innerText = "Registered successfully!";
             } else {
-                // Dito lalabas kung bakit "Error saving to database"
-                console.error("Server Error:", result);
-                alert(`Server Error: ${result.message}\nDetail: ${result.error || 'Check Railway Logs'}`);
-                status.innerText = "Registration Failed.";
+                // Kung nag-error ang database, ito ang lalabas sa screen
+                alert("Server Error: " + result.message);
+                status.innerText = "Error: Database failed to save.";
             }
         } catch (err) {
-            console.error("Network Error:", err);
-            alert("Cannot reach Railway server. Is it Online?");
+            console.error("Backend Error:", err);
+            alert("Railway server is down!");
+            status.innerText = "System Offline";
         }
     } else {
         alert("Face not detected. Try again.");
@@ -131,3 +132,4 @@ document.getElementById('viewLogsBtn').addEventListener('click', async () => {
         alert("Search failed.");
     }
 });
+
