@@ -5,19 +5,22 @@ const bodyParser = require('body-parser');
 
 const app = express();
 app.use(cors());
-// Dinagdagan natin ang limit dahil malaki ang face descriptor array
 app.use(bodyParser.json({ limit: '50mb' }));
 
-// 1. Connect to MongoDB
-// Kapag i-deploy mo na, palitan ang localhost ng iyong MongoDB Atlas URI
-mongoose.connect('mongodb://localhost:27017/attendanceDB')
-    .then(() => console.log("Connected to MongoDB..."))
-    .catch(err => console.error("Could not connect to MongoDB:", err));
+// 1. DYNAMIC CONFIGURATION (Railway & Local)
+// Ginagamit ang MONGO_URL mula sa Railway Variables mo
+const MONGO_URI = process.env.MONGO_URL || 'mongodb://localhost:27017/attendanceDB';
+const PORT = process.env.PORT || 3000;
 
-// 2. Define User Schema
+// 2. CONNECT TO DATABASE
+mongoose.connect(MONGO_URI)
+    .then(() => console.log("Connected to Cloud MongoDB Successfully!"))
+    .catch(err => console.error("Database Connection Error:", err));
+
+// 3. DEFINE USER SCHEMA
 const userSchema = new mongoose.Schema({
     name: String,
-    descriptor: [Number], // Array ng 128 face points
+    descriptor: [Number], 
     logs: [{ 
         time: { type: Date, default: Date.now }, 
         type: { type: String, default: 'Time Log' } 
@@ -26,12 +29,12 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// HELPER FUNCTION: Euclidean Distance para sa face matching
+// HELPER FUNCTION: Face Matching logic
 function getFaceDistance(desc1, desc2) {
-    return Math.sqrt(desc1.reduce((sum, val, i) => sum + Math.pow(val - desc2[i], 2), 0));
+    return Math.sqrt(desc1.reduce((sum, val, i) => sum + Math.pow(val - (desc2[i] || 0), 2), 0));
 }
 
-// 3. API Route: Register
+// 4. API ROUTE: Register
 app.post('/register', async (req, res) => {
     try {
         const { name, descriptor } = req.body;
@@ -39,18 +42,19 @@ app.post('/register', async (req, res) => {
         await newUser.save();
         res.status(201).send({ message: "User registered successfully!" });
     } catch (err) {
-        res.status(500).send({ message: "Error saving to database." });
+        console.error("REGISTER ERROR:", err.message); // Lalabas ito sa Railway logs
+        res.status(500).send({ message: "Error saving to database.", error: err.message });
     }
 });
 
-// 4. API Route: Verify Face (Para sa Scan Button)
+// 5. API ROUTE: Verify Face (Scan)
 app.post('/verify-face', async (req, res) => {
     try {
         const { descriptor } = req.body;
-        const users = await User.find(); // Kunin lahat ng users sa database
+        const users = await User.find();
 
         let bestMatch = null;
-        let minDistance = 0.6; // Threshold: mas mababa sa 0.6 ay "Match"
+        let minDistance = 0.6; 
 
         users.forEach(user => {
             const distance = getFaceDistance(descriptor, user.descriptor);
@@ -61,7 +65,6 @@ app.post('/verify-face', async (req, res) => {
         });
 
         if (bestMatch) {
-            // Mag-save ng bagong log para sa nakitang user
             bestMatch.logs.push({ type: 'Time In/Out' });
             await bestMatch.save();
             res.status(200).send({ success: true, name: bestMatch.name });
@@ -69,25 +72,22 @@ app.post('/verify-face', async (req, res) => {
             res.status(404).send({ success: false, message: "Face not recognized." });
         }
     } catch (err) {
+        console.error("VERIFY ERROR:", err.message);
         res.status(500).send({ message: "Server error during verification." });
     }
 });
 
-// 5. API Route: View Logs by ID or Name (Hiniling mong feature)
+// 6. API ROUTE: View Logs
 app.get('/logs/:identifier', async (req, res) => {
     try {
         const iden = req.params.identifier;
-        
-        // Hahanapin kung ang identifier ay valid MongoDB ID o Name
         const query = mongoose.Types.ObjectId.isValid(iden) 
             ? { _id: iden } 
             : { name: { $regex: new RegExp(iden, "i") } };
 
         const user = await User.findOne(query);
 
-        if (!user) {
-            return res.status(404).send({ message: "User not found." });
-        }
+        if (!user) return res.status(404).send({ message: "User not found." });
 
         res.status(200).json({ name: user.name, id: user._id, logs: user.logs });
     } catch (err) {
@@ -95,4 +95,5 @@ app.get('/logs/:identifier', async (req, res) => {
     }
 });
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+// 7. START SERVER
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
