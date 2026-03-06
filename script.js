@@ -1,8 +1,10 @@
 const video = document.getElementById('video');
 const status = document.getElementById('status');
 
+// BAGONG API URL: Ito ang link mula sa Railway Networking mo
+const API_URL = 'https://dailytimerecord-production.up.railway.app';
+
 // 1. I-load ang mga AI Models
-// Gumagamit tayo ng relative path para hindi mag-CORS error sa Live Server
 Promise.all([
     faceapi.nets.ssdMobilenetv1.loadFromUri('models/'),
     faceapi.nets.faceLandmark68Net.loadFromUri('models/'),
@@ -27,7 +29,7 @@ async function startVideo() {
     }
 }
 
-// 3. REGISTER: Send face data to Node.js
+// 3. REGISTER: Send face data to Railway
 document.getElementById('registerBtn').addEventListener('click', async () => {
     const name = document.getElementById('userName').value;
     if (!name) return alert("Please enter a name first!");
@@ -37,7 +39,7 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
 
     if (detections) {
         try {
-            const response = await fetch('http://localhost:3000/register', {
+            const response = await fetch(`${API_URL}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -50,14 +52,14 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
             status.innerText = "Registered successfully!";
         } catch (err) {
             console.error("Backend Error:", err);
-            alert("Check if your Node.js server is running!");
+            alert("Error: Railway server is not responding!");
         }
     } else {
         alert("Face not detected. Try again.");
     }
 });
 
-// 4. SCAN (TIME IN/OUT): Verify face against Database
+// 4. SCAN (TIME IN/OUT): Verify face against Railway Database
 document.getElementById('scanBtn').addEventListener('click', async () => {
     status.innerText = "Scanning...";
     
@@ -67,7 +69,7 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
         const currentDescriptor = Array.from(detections.descriptor);
 
         try {
-            const response = await fetch('http://localhost:3000/verify-face', {
+            const response = await fetch(`${API_URL}/verify-face`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ descriptor: currentDescriptor })
@@ -83,14 +85,14 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
                 alert("Unknown User.");
             }
         } catch (err) {
-            alert("Error connecting to server.");
+            alert("Error connecting to Railway server.");
         }
     } else {
         alert("No face detected during scan.");
     }
 });
 
-// 5. VIEW RECORDS: Search by ID or Name
+// 5. VIEW RECORDS: Search by ID or Name on Cloud
 document.getElementById('viewLogsBtn').addEventListener('click', async () => {
     const identifier = document.getElementById('searchId').value;
     if (!identifier) return alert("Please enter User ID or Name!");
@@ -98,19 +100,16 @@ document.getElementById('viewLogsBtn').addEventListener('click', async () => {
     status.innerText = "Searching records...";
 
     try {
-        // Tatawagin natin ang API sa Node.js server mo
-        const response = await fetch(`http://localhost:3000/logs/${identifier}`);
+        const response = await fetch(`${API_URL}/logs/${identifier}`);
         const data = await response.json();
 
         if (response.ok) {
             const table = document.getElementById('logsTable');
             const tbody = document.getElementById('logsBody');
             
-            // Linisin ang table bago lagyan ng bago
             tbody.innerHTML = "";
             table.style.display = "table";
 
-            // I-populate ang table gamit ang logs galing sa database
             data.logs.forEach(log => {
                 const dateObj = new Date(log.time);
                 const row = `<tr>
@@ -128,6 +127,6 @@ document.getElementById('viewLogsBtn').addEventListener('click', async () => {
         }
     } catch (err) {
         console.error("Search Error:", err);
-        alert("Could not connect to the backend server.");
+        alert("Could not connect to the Railway backend.");
     }
 });
