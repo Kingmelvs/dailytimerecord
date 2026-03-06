@@ -1,7 +1,7 @@
 const video = document.getElementById('video');
 const status = document.getElementById('status');
 
-// BAGONG API URL: Ito ang link mula sa Railway Networking mo
+// API URL mula sa Railway
 const API_URL = 'https://dailytimerecord-production.up.railway.app';
 
 // 1. I-load ang mga AI Models
@@ -47,27 +47,34 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
                     descriptor: Array.from(detections.descriptor)
                 })
             });
+
             const result = await response.json();
-            alert(result.message);
-            status.innerText = "Registered successfully!";
+            
+            if (response.ok) {
+                alert(result.message);
+                status.innerText = "Registered successfully!";
+            } else {
+                // Dito lalabas kung bakit "Error saving to database"
+                console.error("Server Error:", result);
+                alert(`Server Error: ${result.message}\nDetail: ${result.error || 'Check Railway Logs'}`);
+                status.innerText = "Registration Failed.";
+            }
         } catch (err) {
-            console.error("Backend Error:", err);
-            alert("Error: Railway server is not responding!");
+            console.error("Network Error:", err);
+            alert("Cannot reach Railway server. Is it Online?");
         }
     } else {
         alert("Face not detected. Try again.");
     }
 });
 
-// 4. SCAN (TIME IN/OUT): Verify face against Railway Database
+// 4. SCAN (TIME IN/OUT): Verify face
 document.getElementById('scanBtn').addEventListener('click', async () => {
     status.innerText = "Scanning...";
-    
     const detections = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
 
     if (detections) {
         const currentDescriptor = Array.from(detections.descriptor);
-
         try {
             const response = await fetch(`${API_URL}/verify-face`, {
                 method: 'POST',
@@ -76,29 +83,27 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
             });
 
             const result = await response.json();
-            
             if (result.success) {
-                status.innerText = `Welcome, ${result.name}! Time logged.`;
+                status.innerText = `Welcome, ${result.name}!`;
                 alert(`Time In/Out successful for ${result.name}`);
             } else {
                 status.innerText = "Face not recognized.";
-                alert("Unknown User.");
+                alert(result.message || "Unknown User.");
             }
         } catch (err) {
-            alert("Error connecting to Railway server.");
+            alert("Error connecting to Railway.");
         }
     } else {
-        alert("No face detected during scan.");
+        alert("No face detected.");
     }
 });
 
-// 5. VIEW RECORDS: Search by ID or Name on Cloud
+// 5. VIEW RECORDS: Search by ID or Name
 document.getElementById('viewLogsBtn').addEventListener('click', async () => {
     const identifier = document.getElementById('searchId').value;
     if (!identifier) return alert("Please enter User ID or Name!");
 
-    status.innerText = "Searching records...";
-
+    status.innerText = "Searching...";
     try {
         const response = await fetch(`${API_URL}/logs/${identifier}`);
         const data = await response.json();
@@ -106,7 +111,6 @@ document.getElementById('viewLogsBtn').addEventListener('click', async () => {
         if (response.ok) {
             const table = document.getElementById('logsTable');
             const tbody = document.getElementById('logsBody');
-            
             tbody.innerHTML = "";
             table.style.display = "table";
 
@@ -119,14 +123,11 @@ document.getElementById('viewLogsBtn').addEventListener('click', async () => {
                 </tr>`;
                 tbody.innerHTML += row;
             });
-            
-            status.innerText = `Logs loaded for ${data.name}`;
+            status.innerText = `Logs for ${data.name}`;
         } else {
             alert(data.message || "User not found.");
-            status.innerText = "User not found.";
         }
     } catch (err) {
-        console.error("Search Error:", err);
-        alert("Could not connect to the Railway backend.");
+        alert("Search failed.");
     }
 });
